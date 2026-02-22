@@ -329,9 +329,17 @@ func _setup_settings():
 	_update_model_id_label(model_idx)
 	
 	api_key_input.text = settings.api_key
-	url_input.text = settings.api_url
+	
+	if settings.api_url.is_empty():
+		var provider = settings.providers[provider_idx]
+		url_input.text = provider.get("url", "")
+	else:
+		url_input.text = settings.api_url
+	
 	temp_slider.value = settings.temperature
 	system_prompt_input.text = settings.system_prompt
+	
+	print("TeboAI: Settings UI updated - Provider: " + settings.api_provider + ", Model: " + settings.model)
 
 func _on_provider_selected(idx: int):
 	_populate_models(idx)

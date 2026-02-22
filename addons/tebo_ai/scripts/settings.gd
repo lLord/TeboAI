@@ -63,7 +63,27 @@ static func get_instance() -> TeboAISettings:
 	if not instance:
 		instance = TeboAISettings.new()
 		instance.load_models_config()
+		instance._load_from_file()
 	return instance
+
+func _load_from_file():
+	var config = ConfigFile.new()
+	
+	print("TeboAI: Loading settings from " + SETTINGS_PATH)
+	
+	if config.load(SETTINGS_PATH) == OK:
+		print("TeboAI: Config file loaded successfully")
+		api_provider = config.get_value("api", "provider", api_provider)
+		api_key = config.get_value("api", "api_key", api_key)
+		api_url = config.get_value("api", "api_url", api_url)
+		model = config.get_value("api", "model", model)
+		max_tokens = config.get_value("api", "max_tokens", max_tokens)
+		temperature = config.get_value("api", "temperature", temperature)
+		system_prompt = config.get_value("api", "system_prompt", system_prompt)
+		
+		print("TeboAI: Loaded provider=" + api_provider + " model=" + model)
+	else:
+		print("TeboAI: No config file found, using defaults")
 
 func load_models_config():
 	print("TeboAI: Loading models config from: " + MODELS_PATH)
@@ -93,14 +113,22 @@ func load_models_config():
 	
 	print("TeboAI: Loaded " + str(providers.size()) + " providers")
 	
-	if providers.size() > 0:
+	if providers.size() > 0 and api_provider.is_empty():
 		var first_provider = providers[0]
-		if api_url.is_empty():
-			api_url = first_provider.get("url", "")
-		if model.is_empty() and first_provider.has("models"):
-			var models = first_provider["models"]
-			if models.size() > 0:
-				model = models[0].get("id", "")
+		api_provider = first_provider.get("id", "")
+		print("TeboAI: Setting default provider to: " + api_provider)
+	
+	if api_url.is_empty():
+		var provider = get_provider_by_id(api_provider)
+		if not provider.is_empty():
+			api_url = provider.get("url", "")
+			print("TeboAI: Setting URL from provider: " + api_url)
+	
+	if model.is_empty():
+		var models = get_provider_models(api_provider)
+		if models.size() > 0:
+			model = models[0].get("id", "")
+			print("TeboAI: Setting default model to: " + model)
 
 func get_provider_by_id(provider_id: String) -> Dictionary:
 	for provider in providers:
@@ -144,16 +172,14 @@ func save_settings():
 	config.set_value("api", "max_tokens", max_tokens)
 	config.set_value("api", "temperature", temperature)
 	config.set_value("api", "system_prompt", system_prompt)
-	config.save(SETTINGS_PATH)
+	
+	var err = config.save(SETTINGS_PATH)
+	if err == OK:
+		print("TeboAI: Settings saved to " + SETTINGS_PATH)
+		print("TeboAI: Saved provider=" + api_provider + " model=" + model)
+	else:
+		push_error("TeboAI: Failed to save settings: " + str(err))
 
 static func load_settings():
-	var settings = get_instance()
-	var config = ConfigFile.new()
-	if config.load(SETTINGS_PATH) == OK:
-		settings.api_provider = config.get_value("api", "provider", settings.api_provider)
-		settings.api_key = config.get_value("api", "api_key", settings.api_key)
-		settings.api_url = config.get_value("api", "api_url", settings.api_url)
-		settings.model = config.get_value("api", "model", settings.model)
-		settings.max_tokens = config.get_value("api", "max_tokens", settings.max_tokens)
-		settings.temperature = config.get_value("api", "temperature", settings.temperature)
-		settings.system_prompt = config.get_value("api", "system_prompt", settings.system_prompt)
+	get_instance()
+	print("TeboAI: load_settings() called - instance ready")
