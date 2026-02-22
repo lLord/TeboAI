@@ -2,7 +2,6 @@
 extends EditorPlugin
 
 var panel: Control
-var panel_button: Button
 
 func _enter_tree():
 	print("═══════════════════════════════════════")
@@ -28,8 +27,8 @@ func _enter_tree():
 		push_error("TeboAI: Failed to instantiate panel")
 		return
 	
-	print("TeboAI: Panel created, adding to bottom panel...")
-	panel_button = add_control_to_bottom_panel(panel, "TeboAI")
+	print("TeboAI: Panel created, adding to right dock...")
+	add_control_to_dock(DOCK_SLOT_RIGHT_UR, panel)
 	
 	print("TeboAI: Loading settings...")
 	TeboAISettings.load_settings()
@@ -39,7 +38,5 @@ func _enter_tree():
 func _exit_tree():
 	print("TeboAI: _exit_tree() called")
 	if panel:
-		remove_control_from_bottom_panel(panel)
+		remove_control_from_docks(panel)
 		panel.queue_free()
-	if panel_button:
-		panel_button.queue_free()

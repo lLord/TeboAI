@@ -74,8 +74,8 @@ func _find_nodes():
 	print("TeboAI: Finding nodes...")
 	
 	messages_container = get_node_or_null("TabContainer/Chat/MessagesScroll/Messages")
-	input_field = get_node_or_null("TabContainer/Chat/InputContainer/InputField")
-	send_btn = get_node_or_null("TabContainer/Chat/InputContainer/SendBtn")
+	input_field = get_node_or_null("TabContainer/Chat/InputContainer/InputRow/InputField")
+	send_btn = get_node_or_null("TabContainer/Chat/InputContainer/InputRow/SendBtn")
 	clear_btn = get_node_or_null("Toolbar/ClearBtn")
 	settings_btn = get_node_or_null("Toolbar/SettingsBtn")
 	loading_label = get_node_or_null("LoadingLabel")
