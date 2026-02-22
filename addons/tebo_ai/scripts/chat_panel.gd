@@ -33,6 +33,12 @@ var system_prompt_input: TextEdit
 var settings
 var console_logs: Array = []
 
+var status_icon: RichTextLabel
+var status_label: Label
+var animation_timer: Timer
+var animation_dots: int = 0
+var is_thinking: bool = false
+
 func _init():
 	print("TeboAI: chat_panel _init() called")
 
@@ -40,6 +46,7 @@ func _ready():
 	print("TeboAI: chat_panel _ready() called")
 	
 	_find_nodes()
+	_setup_animation_timer()
 	
 	settings = SettingsScript.get_instance()
 	print("TeboAI: Settings instance obtained")
@@ -94,6 +101,8 @@ func _find_nodes():
 	temp_slider = get_node_or_null("SettingsPopup/SettingsContent/ParametersSection/TempRow/TempSlider")
 	temp_value = get_node_or_null("SettingsPopup/SettingsContent/ParametersSection/TempRow/TempValue")
 	system_prompt_input = get_node_or_null("SettingsPopup/SettingsContent/ParametersSection/SystemPromptInput")
+	status_icon = get_node_or_null("StatusBar/StatusIcon")
+	status_label = get_node_or_null("StatusBar/StatusLabel")
 	
 	var nodes = {
 		"messages_container": messages_container,
@@ -108,6 +117,69 @@ func _find_nodes():
 			push_error("TeboAI: Node '" + name + "' NOT FOUND!")
 		else:
 			print("TeboAI: Node '" + name + "' OK")
+
+func _setup_animation_timer():
+	animation_timer = Timer.new()
+	animation_timer.wait_time = 0.4
+	animation_timer.one_shot = false
+	animation_timer.timeout.connect(_on_animation_tick)
+	add_child(animation_timer)
+	_set_status_ready()
+
+func _on_animation_tick():
+	if not is_thinking:
+		return
+	
+	animation_dots = (animation_dots + 1) % 4
+	var dots = ""
+	for i in range(animation_dots):
+		dots += "."
+	
+	if status_label:
+		status_label.text = "Thinking" + dots
+	if status_icon:
+		status_icon.text = "[color=yellow]●[/color]"
+
+func _set_status_thinking():
+	is_thinking = true
+	animation_dots = 0
+	if animation_timer:
+		animation_timer.start()
+	if status_icon:
+		status_icon.text = "[color=yellow]●[/color]"
+	if status_label:
+		status_label.text = "Thinking"
+
+func _set_status_success():
+	is_thinking = false
+	if animation_timer:
+		animation_timer.stop()
+	if status_icon:
+		status_icon.text = "[color=green]✓[/color]"
+	if status_label:
+		status_label.text = "Done"
+	
+	get_tree().create_timer(2.0).timeout.connect(_set_status_ready)
+
+func _set_status_error():
+	is_thinking = false
+	if animation_timer:
+		animation_timer.stop()
+	if status_icon:
+		status_icon.text = "[color=red]✗[/color]"
+	if status_label:
+		status_label.text = "Error"
+	
+	get_tree().create_timer(3.0).timeout.connect(_set_status_ready)
+
+func _set_status_ready():
+	is_thinking = false
+	if animation_timer:
+		animation_timer.stop()
+	if status_icon:
+		status_icon.text = "[color=gray]○[/color]"
+	if status_label:
+		status_label.text = "Ready"
 
 func _setup_ui():
 	if send_btn:
@@ -312,6 +384,7 @@ func _on_send_pressed():
 	
 	_add_user_message(text)
 	set_ui_blocked(true)
+	_set_status_thinking()
 	_log_console("[INFO] Sending message to API...")
 	_log_console("[USER] " + text)
 	_log_console("[DEBUG] Provider: " + settings.api_provider)
@@ -325,15 +398,18 @@ func _on_send_pressed():
 	
 	if not success:
 		set_ui_blocked(false)
+		_set_status_error()
 		_log_console("[ERROR] Failed to send message")
 
 func _on_response_received(text: String):
 	set_ui_blocked(false)
+	_set_status_success()
 	_add_assistant_message(text)
 	_log_console("[INFO] Response displayed in chat")
 
 func _on_error_received(error: String):
 	set_ui_blocked(false)
+	_set_status_error()
 	_add_system_message("[color=red]Error:[/color] " + error)
 	_log_console("[ERROR] " + error)
 
