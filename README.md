@@ -2,6 +2,8 @@
 
 An AI-powered assistant plugin for the Godot game engine that provides intelligent code assistance, project management, and automated file operations directly within the editor.
 
+Vibe coded with OpenCode and the GLM-5 free model.
+
 ## Features
 
 ### AI Chat Integration
