@@ -73,7 +73,7 @@ TeboAI can automatically execute operations on your project using these tools:
 
 3. Find **TeboAI** in the list and enable it
 
-4. The TeboAI panel will appear in the bottom panel area
+4. The TeboAI panel will appear in the **right dock** area
 
 ## Configuration
 
